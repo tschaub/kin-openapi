@@ -140,7 +140,7 @@ const exampleV2 = `
 
 const exampleV3 = `
 {
-  "openapi": "3.0",
+  "openapi": "3.0.0",
   "info": {"title":"MyAPI","version":"0.1"},
   "components": {},
   "tags": [
