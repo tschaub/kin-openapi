@@ -75,7 +75,7 @@ func ToV3Swagger(swagger *openapi2.Swagger) (*openapi3.Swagger, error) {
 			result.Components.Responses[k] = r
 		}
 	}
-	result.Components.Schemas = swagger.Definitions
+	result.Components.Schemas = ToV3Schemas(swagger.Definitions)
 	if m := swagger.SecurityDefinitions; m != nil {
 		resultSecuritySchemes := make(map[string]*openapi3.SecuritySchemeRef)
 		for k, v := range m {
@@ -215,14 +215,28 @@ func ToV3Response(response *openapi2.Response) (*openapi3.ResponseRef, error) {
 	}, nil
 }
 
+func ToV3Schemas(defs map[string]*openapi3.SchemaRef) map[string]*openapi3.SchemaRef {
+	schemas := make(map[string]*openapi3.SchemaRef, len(defs))
+	for name, schema := range defs {
+		schemas[name] = ToV3SchemaRef(schema)
+	}
+	return schemas
+}
+
 func ToV3SchemaRef(schema *openapi3.SchemaRef) *openapi3.SchemaRef {
 	if ref := schema.Ref; len(ref) > 0 {
 		return &openapi3.SchemaRef{
 			Ref: ToV3Ref(ref),
 		}
 	}
-	if schema.Value != nil && schema.Value.Items != nil {
+	if schema.Value == nil {
+		return schema
+	}
+	if schema.Value.Items != nil {
 		schema.Value.Items = ToV3SchemaRef(schema.Value.Items)
+	}
+	for k, v := range schema.Value.Properties {
+		schema.Value.Properties[k] = ToV3SchemaRef(v)
 	}
 	return schema
 }
@@ -386,8 +400,14 @@ func FromV3SchemaRef(schema *openapi3.SchemaRef) *openapi3.SchemaRef {
 			Ref: FromV3Ref(ref),
 		}
 	}
-	if schema.Value != nil && schema.Value.Items != nil {
+	if schema.Value == nil {
+		return schema
+	}
+	if schema.Value.Items != nil {
 		schema.Value.Items = FromV3SchemaRef((schema.Value.Items))
+	}
+	for k, v := range schema.Value.Properties {
+		schema.Value.Properties[k] = FromV3SchemaRef(v)
 	}
 	return schema
 }
