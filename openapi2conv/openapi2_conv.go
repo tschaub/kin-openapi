@@ -175,10 +175,10 @@ func ToV3Parameter(parameter *openapi2.Parameter) (*openapi3.ParameterRef, *open
 		Name:        parameter.Name,
 		Description: parameter.Description,
 		Required:    parameter.Required,
-		Schema:      parameter.Schema,
 	}
+
 	if parameter.Type != "" {
-		result.Schema = &openapi3.SchemaRef{
+		schema := &openapi3.SchemaRef{
 			Value: &openapi3.Schema{
 				Type:         parameter.Type,
 				Format:       parameter.Format,
@@ -190,8 +190,12 @@ func ToV3Parameter(parameter *openapi2.Parameter) (*openapi3.ParameterRef, *open
 				MinLength:    parameter.MinLength,
 				MaxLength:    parameter.MaxLength,
 				Default:      parameter.Default,
+				Items:        parameter.Items,
+				MinItems:     parameter.MinItems,
+				MaxItems:     parameter.MaxItems,
 			},
 		}
+		result.Schema = ToV3SchemaRef(schema)
 	}
 	return &openapi3.ParameterRef{
 		Value: result,
@@ -541,6 +545,7 @@ func FromV3Parameter(ref *openapi3.ParameterRef) (*openapi2.Parameter, error) {
 		Required:    parameter.Required,
 	}
 	if schemaRef := parameter.Schema; schemaRef != nil {
+		schemaRef = FromV3SchemaRef(schemaRef)
 		schema := schemaRef.Value
 		result.Type = schema.Type
 		result.Format = schema.Format
@@ -553,6 +558,9 @@ func FromV3Parameter(ref *openapi3.ParameterRef) (*openapi2.Parameter, error) {
 		result.MaxLength = schema.MaxLength
 		result.Pattern = schema.Pattern
 		result.Default = schema.Default
+		result.Items = schema.Items
+		result.MinItems = schema.MinItems
+		result.MaxItems = schema.MaxItems
 	}
 	return result, nil
 }
